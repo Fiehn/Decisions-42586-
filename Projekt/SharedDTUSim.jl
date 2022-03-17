@@ -34,7 +34,7 @@ end
 
 #If a vehicle is available, the student will leave station 1 with the vehicle. Arrival event at St2 is generated
 function arrival_student_st1(env::Environment, state::State, events::PriorityQueue{Event,Float64}, t::Float64)
-
+    rand()
 
 
 end
