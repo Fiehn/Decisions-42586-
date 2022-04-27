@@ -257,30 +257,30 @@ function main(initial_n_cars::Vector{Int64},days_to_run::Int64,n_of_runs::Int64,
     efficiancy_empty = []
 
     # Run the simulation n_of_runs times
-    for i in 1:n_of_runs
-        a = sim(days_to_run,initial_n_cars,rebal,env)
-        overview = [overview;a]
+    for i in 1:n_of_runs 
+        a = sim(days_to_run,initial_n_cars,rebal,env) 
+        overview = [overview;a]  # Add to overview
         
-        efficiancy_fullfilled = [a[3][1]/(a[3][1]+a[2][1]), a[3][2]/(a[3][2]+a[2][2]) ]
-        efficiancy_emptytime = [a[4][1]/(days_to_run*24),a[4][2]/(days_to_run*24)]
+        efficiancy_fullfilled = [a[3][1]/(a[3][1]+a[2][1]), a[3][2]/(a[3][2]+a[2][2]) ] # Calculate efficiancy
+        efficiancy_emptytime = [a[4][1]/(days_to_run*24),a[4][2]/(days_to_run*24)] 
 
-        # print("Efficiancy percentage for station 1 is ")
-        # printstyled(round(efficiancy_fullfilled[1]*100,digits=2),"%"; color=:blue)
-        # print(" and ")
-        # printstyled(round(efficiancy_fullfilled[2]*100,digits=2),"%"; color=:blue)
-        # print(" for station 2. Percentage of time spent empty for station 1 is ")
-        # printstyled(round(efficiancy_emptytime[1]*100,digits=2),"%"; color=:blue)
-        # print(" and ")
-        # printstyled(round(efficiancy_emptytime[2]*100,digits=2),"%"; color=:blue)
-        # println(" for station 2.")
-     
-        # Save stats for plot if needed
-        if n_of_runs == 1
-            global out = [a[6],a[7],a[8]]
-        end
-
-        efficiancy_cars = [efficiancy_cars; [efficiancy_fullfilled]]
+        efficiancy_cars = [efficiancy_cars; [efficiancy_fullfilled]] 
         efficiancy_empty = [efficiancy_empty; [efficiancy_emptytime]]
+    end
+    
+    # Save stats for plot if needed
+    if n_of_runs == 1
+        global out = [a[6],a[7],a[8]]
+        
+        print("Efficiancy percentage for station 1 is ")
+        printstyled(round(efficiancy_fullfilled[1]*100,digits=2),"%"; color=:blue)
+        print(" and ")
+        printstyled(round(efficiancy_fullfilled[2]*100,digits=2),"%"; color=:blue)
+        print(" for station 2. Percentage of time spent empty for station 1 is ")
+        printstyled(round(efficiancy_emptytime[1]*100,digits=2),"%"; color=:blue)
+        print(" and ")
+        printstyled(round(efficiancy_emptytime[2]*100,digits=2),"%"; color=:blue)
+        println(" for station 2.")
     end
     return efficiancy_empty, efficiancy_cars
 end
@@ -293,8 +293,8 @@ end
 
 ########### Example for plotting ############
 main([140,20],50,1,([(121,30)],[0.0]))
-plot(out[3],out[1],linetype=:steppost)
-plot(out[3],out[2],linetype=:steppost)
+plot(out[3],out[1],linetype=:steppost) # Plot the graph of vehicles for station 1
+plot(out[3],out[2],linetype=:steppost) # Plot the graph of vehicles for station 2
 
 ########### For loop to find ideal rebalance at midnight ############
 # Only rebalance amount
