@@ -289,6 +289,60 @@ end
 # 4: ( [(Desired amount at station 1 for first reblance, station 2 at first rebalance), (station 1 at second, station 2 at second), ..., (station 1 at n rebalance, station 2 at n)], [time of first rebalance, ..., time at n event] ) (Tuple(Int,Int),Float)
 
 
+############# Results for the report #############
+function mean_std_main(time, eff)
+    eff_st1 = []
+    eff_st2 = []
+    time_st1 = []
+    time_st2 = []
+    for i in 1:length(eff)
+        push!(eff_st1,eff[i][1])
+        push!(eff_st2,eff[i][2])
+        push!(time_st1,time[i][1])
+        push!(time_st2,time[i][2])
+    end
+    mean_eff = [mean(eff_st1),mean(eff_st2)]
+    std_eff = [std(eff_st1),std(eff_st2)]
+    mean_time = [mean(time_st1),mean(time_st2)]
+    std_time = [std(time_st1),std(time_st2)]
+    return mean_eff,std_eff,mean_time,std_time
+end
+
+# Confidence interval
+function ConfSample(sample_mean,sample_std,n,alpha=0.95,max_n = 30)
+    conf = []
+    alpha = 1-alpha
+    if n > max_n
+        # Using Gaussian approximation
+        append!(conf,sample_mean + quantile(Normal(),(alpha)/2)*sample_std/sqrt(n))
+        append!(conf,sample_mean - quantile(Normal(),(alpha)/2)*sample_std/sqrt(n))
+    else
+        # Using t distribution
+        append!(conf, sample_mean + quantile(TDist(n-1), (alpha)/2)*sample_std/sqrt(n))
+        append!(conf, sample_mean - quantile(TDist(n-1), (alpha)/2)*sample_std/sqrt(n))
+    end
+    return conf
+end
+
+### Values (run with different values) ###
+time, eff = main([140,20],100,30,([(140,20)],[0.0]))
+
+mean_eff,std_eff,mean_time,std_time = mean_std_main(time, eff)
+ConfSample(mean_eff[1],std_eff[1],length(eff),0.95)
+ConfSample(mean_eff[2],std_eff[2],length(eff),0.95)
+ConfSample(mean_time[1],std_time[1],length(eff),0.95)
+ConfSample(mean_time[2],std_time[2],length(eff),0.95)
+
+
+### Plots ###
+main([100,100],15,1,([(100,100)],[0.0]))
+plot(out[3],out[1],color="blue",labels="Amount of vehicles at station 1 by hours") # Plot the graph of vehicles for station 1
+plot!(out[3],out[2],color="red",labels="Amount of vehicles at station 2 by hours") # Plot the graph of vehicles for station 2
+
+
+
+############################ Section 4 ############################
+
 ########### For loop to find ideal rebalance at midnight ############
 # Finding the rebalance amount to begin with and the related efficiancy
 function ideal_rebalance_midnight(n,stepsize=15)
@@ -470,7 +524,7 @@ end
 
 
 ########### Example for plotting and averages with one rebalance based on previous optimization ############
-# Using the just found lowest amount of cars and time to display results for one rebalance
+# Using the previously found lowest amount of cars and time to display results for one rebalance
 
 main([floor(Int64,222*0.803),trunc(Int64,222*0.197)],10,1,([(floor(Int64,222*0.803),trunc(Int64,222*0.197))],[8.0]))
 
