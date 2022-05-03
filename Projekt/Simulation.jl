@@ -274,19 +274,19 @@ function main(initial_n_cars::Vector{Int64},days_to_run::Int64,n_of_runs::Int64,
     end
     
     # Save stats for plot if needed
-    if n_of_runs == 1
-        global out = [a[6],a[7],a[8]]
+    # if n_of_runs == 1
+    #     global out = [a[6],a[7],a[8]]
 
-        print("Efficiancy percentage for station 1 is ")
-        printstyled(round(efficiancy_fullfilled[1]*100,digits=2),"%"; color=:blue)
-        print(" and ")
-        printstyled(round(efficiancy_fullfilled[2]*100,digits=2),"%"; color=:blue)
-        print(" for station 2. Percentage of time spent empty for station 1 is ")
-        printstyled(round(efficiancy_emptytime[1]*100,digits=2),"%"; color=:blue)
-        print(" and ")
-        printstyled(round(efficiancy_emptytime[2]*100,digits=2),"%"; color=:blue)
-        println(" for station 2.")
-    end
+    #     print("Efficiancy percentage for station 1 is ")
+    #     printstyled(round(efficiancy_fullfilled[1]*100,digits=2),"%"; color=:blue)
+    #     print(" and ")
+    #     printstyled(round(efficiancy_fullfilled[2]*100,digits=2),"%"; color=:blue)
+    #     print(" for station 2. Percentage of time spent empty for station 1 is ")
+    #     printstyled(round(efficiancy_emptytime[1]*100,digits=2),"%"; color=:blue)
+    #     print(" and ")
+    #     printstyled(round(efficiancy_emptytime[2]*100,digits=2),"%"; color=:blue)
+    #     println(" for station 2.")
+    # end
     return efficiancy_empty, efficiancy_cars
 end
 
@@ -344,15 +344,15 @@ function lowest_cars_midnight(distribution,n_start,stepsize = 2)
     println("Efficiency for one rebalance at midnight:\nstation1 ",effic_st1,"\nstation2: ",effic_st2,"\nthe amount of cars needed for the desired service level: ",n*2)
 end
 
-# Multiple tests to find the ideal (manually)
-ideal_rebalance_midnight(140,5) # 0.807,0.193
-lowest_cars_midnight([0.807,0.193],125,1) # 272
+# # Multiple tests to find the ideal (manually)
+# ideal_rebalance_midnight(140,5) # 0.807,0.193
+# lowest_cars_midnight([0.807,0.193],125,1) # 272
 
-ideal_rebalance_midnight(136,5) # 0.831,0.169
-lowest_cars_midnight([0.831,0.169],125,1) # 262
+# ideal_rebalance_midnight(136,5) # 0.831,0.169
+# lowest_cars_midnight([0.831,0.169],125,1) # 262
 
-ideal_rebalance_midnight(132) # 0.799,0.200
-lowest_cars_midnight([0.799,0.200],125,1) # 276
+# ideal_rebalance_midnight(132) # 0.799,0.200
+# lowest_cars_midnight([0.799,0.200],125,1) # 276
 
 
 ############ for loop for two rebalance at 7 and 13 ############
@@ -406,24 +406,22 @@ function lowest_cars_7_13(distribution,n_start,stepsize = 2)
     println("Efficiency for one rebalance at midnight:\nstation1 ",effic_st1,"\nstation2: ",effic_st2,"\nthe amount of cars needed for the desired service level: ",n*2)
 end
 
-# Manual tests
-ideal_rebalance_7_13(70,10) # [0.864,0.136],[0.579,0.421]
-lowest_cars_7_13([[0.864,0.136],[0.579,0.421]],70,2) # 164
+# # Manual tests
+# ideal_rebalance_7_13(70,10) # [0.864,0.136],[0.579,0.421]
+# lowest_cars_7_13([[0.864,0.136],[0.579,0.421]],70,2) # 164
 
-ideal_rebalance_7_13(82,8) # [0.884,0.116],[0.521,0.479]
-lowest_cars_7_13([[0.884,0.116],[0.521,0.479]],65,1) # 160
+# ideal_rebalance_7_13(82,8) # [0.884,0.116],[0.521,0.479]
+# lowest_cars_7_13([[0.884,0.116],[0.521,0.479]],65,1) # 160
 
-ideal_rebalance_7_13(80,10) # [0.881,0.119],[0.521,0.479]
-lowest_cars_7_13([[0.881,0.119,],[0.569,0.431]],80,1) # 162
+# ideal_rebalance_7_13(80,10) # [0.881,0.119],[0.521,0.479]
+# lowest_cars_7_13([[0.881,0.119,],[0.569,0.431]],80,1) # 162
 
 
 ########### Example for plotting ############
-st1_reb = floor(Int64,264*0.831)
-st2_reb = trunc(Int64,264*0.169)
+st1_reb = floor(Int64,262*0.831) # 217
+st2_reb = trunc(Int64,262*0.169) # 44
 
-main([140,20],20,1,([(121,30)],[0.0]))
+main([217,44],10,1,([(217,44)],[0.0]))
 plot(out[3],out[1],color="blue",labels="Amount of vehicles at station 1 by hours") # Plot the graph of vehicles for station 1
 plot(out[3],out[2],color="red",labels="Amount of vehicles at station 2 by hours") # Plot the graph of vehicles for station 2
-
-
 
