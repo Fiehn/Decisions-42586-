@@ -17,7 +17,7 @@ function type_change(v)
     return v_ny
 end
 
-function load_arri(path="/ArrivalProfiles.xlsx")
+function load_arri(path="C:/Users/rasmu/OneDrive - Danmarks Tekniske Universitet/Onedrive/OneDrive - Danmarks Tekniske Universitet/Decisions under uncertainty/Projekt/ArrivalProfiles.xlsx")
     xf = XLSX.readxlsx(path)
 
     # Lambda is given as expected arrivals therefore inverse
@@ -252,9 +252,14 @@ end
 function main(initial_n_cars::Vector{Int64},days_to_run::Int64,n_of_runs::Int64,rebalance::Tuple{Vector{Tuple{Int64, Int64}}, Vector{Float64}})
     env = Environment() 
     rebal = Balance(rebalance[1],rebalance[2]) 
+
+    # Defining variables so they act globally
     overview = [] 
+    a = 0
     efficiancy_cars = [] 
     efficiancy_empty = []
+    efficiancy_fullfilled = []
+    efficiancy_emptytime = []
 
     # Run the simulation n_of_runs times
     for i in 1:n_of_runs 
@@ -271,7 +276,7 @@ function main(initial_n_cars::Vector{Int64},days_to_run::Int64,n_of_runs::Int64,
     # Save stats for plot if needed
     if n_of_runs == 1
         global out = [a[6],a[7],a[8]]
-        
+
         print("Efficiancy percentage for station 1 is ")
         printstyled(round(efficiancy_fullfilled[1]*100,digits=2),"%"; color=:blue)
         print(" and ")
@@ -284,6 +289,7 @@ function main(initial_n_cars::Vector{Int64},days_to_run::Int64,n_of_runs::Int64,
     end
     return efficiancy_empty, efficiancy_cars
 end
+
 ########### User manual ############
 ##### Inputs: main(1,2,3,4)
 # 1: [initial cars at station 1, initial cars at station 2] (Int,Int)
@@ -291,45 +297,15 @@ end
 # 3: Amount simulations to run (Int)
 # 4: ( [(Desired amount at station 1 for first reblance, station 2 at first rebalance), (station 1 at second, station 2 at second), ..., (station 1 at n rebalance, station 2 at n)], [time of first rebalance, ..., time at n event] ) (Tuple(Int,Int),Float)
 
-########### Example for plotting ############
-main([140,20],50,1,([(121,30)],[0.0]))
-plot(out[3],out[1],linetype=:steppost) # Plot the graph of vehicles for station 1
-plot(out[3],out[2],linetype=:steppost) # Plot the graph of vehicles for station 2
 
 ########### For loop to find ideal rebalance at midnight ############
-# Only rebalance amount
-effic_st1 = []
-effic_st2 = []
-position = []
-n = 80
-for j in 1:15:n*2
-    _, effic = main([n,n],100,30, ([(j,n*2-j)],[0.0]) )
-    total_effic = [effic[1][1],effic[1][2]]
-    for p in 2:30-1
-        total_effic = [effic[p][1]+total_effic[1],effic[p][2]+total_effic[2]]
-    end
-    
-    push!(effic_st1,total_effic[1]/30)
-    push!(effic_st2,total_effic[2]/30)
-    push!(position,[j,n*2-j])
-end
-
-total_effic = effic_st1 .+ effic_st2
-a = findmax(total_effic)[2]
-
-println("Efficiency for one rebalance midnight:\nstation1 ",effic_st1[a],"\nstation2: ",effic_st2[a],"\nposition: ",position[a])
-
-############ for loop for two rebalance at 7 and 13 ############
-# Only rebalance amount
-effic_st1 = []
-effic_st2 = []
-position_reb1 = []
-position_reb2 = []
-n = 80
-
-for i in 1:20:n*2
-    for j in 1:20:n*2
-        _, effic = main([n,n],100,30, ([(j,n*2-j),(i,n*2-i)],[7.0,13.0]) )
+# Finding the rebalance amount to begin with and the related efficiancy
+function ideal_rebalance_midnight(n,stepsize=15)
+    effic_st1 = []
+    effic_st2 = []
+    position = []
+    for j in 1:stepsize:n*2
+        _, effic = main([n,n],100,30, ([(j,n*2-j)],[0.0]) )
         total_effic = [effic[1][1],effic[1][2]]
         for p in 2:30-1
             total_effic = [effic[p][1]+total_effic[1],effic[p][2]+total_effic[2]]
@@ -337,14 +313,117 @@ for i in 1:20:n*2
         
         push!(effic_st1,total_effic[1]/30)
         push!(effic_st2,total_effic[2]/30)
-        push!(position_reb1,[j,n*2-j])
-        push!(position_reb2,[i,n*2-i])
+        push!(position,[j,n*2-j])
     end
+    # Finding the index of the highest summed efficiancy
+    total_effic = effic_st1 .+ effic_st2
+    a = findmax(total_effic)[2]
+    # Using the index to determine the rebalance amount
+    println("Efficiency for one rebalance midnight:\nstation1 ",effic_st1[a],"\nstation2: ",effic_st2[a],"\nposition: ",position[a])
+    println("Distribution of rebalances:\nStation 1: ",round(position[a][1]/(n*2),digits=3)," Station 2: ",round(position[a][2]/(n*2),digits=3))
 end
 
-total_effic = effic_st1 .+ effic_st2
-a = findmax(total_effic)[2]
-println("\n\nEfficiency for two rebalance at 7 and 13:\nstation 1: ",effic_st1[a],"\nstation2: ",effic_st2[a],"\nposition 1: ",position_reb1[a],"\nposition 2: ",position_reb2[a])
+### Then a for loop to find the lowest amount of cars for to fullfill the service level ###
+# Asuming that the rebalance distribution remains the same with the increase of the total amount of cars
+function lowest_cars_midnight(distribution,n_start,stepsize = 2)
+    effic_st1 = 0
+    effic_st2 = 0
+    n = n_start
+
+    while (effic_st1 <= 0.95 || effic_st2[1] <= 0.95)
+        n = n + stepsize
+        _, effic = main([n,n],100,30, ([(floor(Int64,n*2*distribution[1]),trunc(Int64,n*2*distribution[2]))],[0.0]) )
+        total_effic = [effic[1][1],effic[1][2]]
+        for p in 2:30-1
+            total_effic = [effic[p][1]+total_effic[1],effic[p][2]+total_effic[2]]
+        end
+        effic_st1 = total_effic[1]/30
+        effic_st2 = total_effic[2]/30
+    end
+
+    println("Efficiency for one rebalance at midnight:\nstation1 ",effic_st1,"\nstation2: ",effic_st2,"\nthe amount of cars needed for the desired service level: ",n*2)
+end
+
+# Multiple tests to find the ideal (manually)
+ideal_rebalance_midnight(140,5) # 0.807,0.193
+lowest_cars_midnight([0.807,0.193],125,1) # 272
+
+ideal_rebalance_midnight(136,5) # 0.831,0.169
+lowest_cars_midnight([0.831,0.169],125,1) # 262
+
+ideal_rebalance_midnight(132) # 0.799,0.200
+lowest_cars_midnight([0.799,0.200],125,1) # 276
+
+
+############ for loop for two rebalance at 7 and 13 ############
+# Only rebalance amount
+function ideal_rebalance_7_13(n,stepsize=20)
+    effic_st1 = []
+    effic_st2 = []
+    position_reb1 = []
+    position_reb2 = []
+
+    for i in 1:stepsize:n*2
+        for j in 1:stepsize:n*2
+            _, effic = main([n,n],100,30, ([(j,n*2-j),(i,n*2-i)],[7.0,13.0]) )
+            total_effic = [effic[1][1],effic[1][2]]
+            for p in 2:30-1
+                total_effic = [effic[p][1]+total_effic[1],effic[p][2]+total_effic[2]]
+            end
+            
+            push!(effic_st1,total_effic[1]/30)
+            push!(effic_st2,total_effic[2]/30)
+            push!(position_reb1,[j,n*2-j])
+            push!(position_reb2,[i,n*2-i])
+        end
+    end
+
+    total_effic = effic_st1 .+ effic_st2
+    a = findmax(total_effic)[2]
+    println("\n\nEfficiency for two rebalance at 7 and 13:\nstation 1: ",effic_st1[a],"\nstation2: ",effic_st2[a],"\nposition 1: ",position_reb1[a],"\nposition 2: ",position_reb2[a])
+    println("Distribution of rebalances for rebalance 1:\nStation 1: ",round(position_reb1[a][1]/(n*2),digits=3)," Station 2: ",round(position_reb1[a][2]/(n*2),digits=3))
+    println("Distribution of rebalances for rebalance 2:\nStation 1: ",round(position_reb2[a][1]/(n*2),digits=3)," Station 2: ",round(position_reb2[a][2]/(n*2),digits=3))
+end
+
+function lowest_cars_7_13(distribution,n_start,stepsize = 2)
+    effic_st1 = 0
+    effic_st2 = 0
+    n = n_start
+    while (effic_st1 <= 0.95 || effic_st2 <= 0.95)
+        n += stepsize
+        _, effic = main([n,n],100,30, ([
+            (floor(Int64,n*2*distribution[1][1]),trunc(Int64,n*2*distribution[1][2])),
+            (floor(Int64,n*2*distribution[2][1]),trunc(Int64,n*2*distribution[2][2]))],[7.0,13.0]))
+        total_effic = [effic[1][1],effic[1][2]]
+        for p in 2:30-1
+            total_effic = [effic[p][1]+total_effic[1],effic[p][2]+total_effic[2]]
+        end
+        
+        effic_st1 = total_effic[1]/30
+        effic_st2 = total_effic[2]/30
+
+    end
+    println("Efficiency for one rebalance at midnight:\nstation1 ",effic_st1,"\nstation2: ",effic_st2,"\nthe amount of cars needed for the desired service level: ",n*2)
+end
+
+# Manual tests
+ideal_rebalance_7_13(70,10) # [0.864,0.136],[0.579,0.421]
+lowest_cars_7_13([[0.864,0.136],[0.579,0.421]],70,2) # 164
+
+ideal_rebalance_7_13(82,8) # [0.884,0.116],[0.521,0.479]
+lowest_cars_7_13([[0.884,0.116],[0.521,0.479]],65,1) # 160
+
+ideal_rebalance_7_13(80,10) # [0.881,0.119],[0.521,0.479]
+lowest_cars_7_13([[0.881,0.119,],[0.569,0.431]],80,1) # 162
+
+
+########### Example for plotting ############
+st1_reb = floor(Int64,264*0.831)
+st2_reb = trunc(Int64,264*0.169)
+
+main([140,20],20,1,([(121,30)],[0.0]))
+plot(out[3],out[1],color="blue",labels="Amount of vehicles at station 1 by hours") # Plot the graph of vehicles for station 1
+plot(out[3],out[2],color="red",labels="Amount of vehicles at station 2 by hours") # Plot the graph of vehicles for station 2
 
 
 
