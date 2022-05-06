@@ -325,7 +325,7 @@ function ConfSample(sample_mean,sample_std,n,alpha=0.95,max_n = 30)
 end
 
 ### Values (run with different values) ###
-time, eff = main([140,20],100,30,([(140,20)],[0.0]))
+time, eff = main([150,50],100,30,([(150,50)],[0.0]))
 
 mean_eff,std_eff,mean_time,std_time = mean_std_main(time, eff)
 ConfSample(mean_eff[1],std_eff[1],length(eff),0.95)
@@ -335,9 +335,9 @@ ConfSample(mean_time[2],std_time[2],length(eff),0.95)
 
 
 ### Plots ###
-main([100,100],15,1,([(100,100)],[0.0]))
-plot(out[3],out[1],color="blue",labels="Amount of vehicles at station 1 by hours") # Plot the graph of vehicles for station 1
-plot!(out[3],out[2],color="red",labels="Amount of vehicles at station 2 by hours") # Plot the graph of vehicles for station 2
+time, eff = main([100,100],15,1,([(100,100)],[0.0]))
+plot(out[3],out[1],color="blue",labels="Amount of vehicles at station 1 by hours",xlabel="Time in hours",ylabel="Amount of cars") # Plot the graph of vehicles for station 1
+plot!(out[3],out[2],color="red",labels="Amount of vehicles at station 2 by hours",xlabel="Time in hours",ylabel="Amount of cars") # Plot the graph of vehicles for station 2
 
 
 
@@ -398,6 +398,65 @@ end
 
 # ideal_rebalance_midnight(132) # 0.799,0.200
 # lowest_cars_midnight([0.799,0.200],125,1) # 276
+
+############ for loop for one rebalance at determined time and distribution ############
+function ideal_rebalance_with_time(n,stepsize_time=2,stepsize_distribution=15)
+    effic_st1 = []
+    effic_st2 = []
+    position = []
+    time = []
+    for t in 1:stepsize_time:24
+        for j in 1:stepsize_distribution:n*2
+            _, effic = main([n,n],50,30, ([(j,n*2-j)],[float(t)]) )
+            total_effic = [effic[1][1],effic[1][2]]
+            for p in 2:30-1
+                total_effic = [effic[p][1]+total_effic[1],effic[p][2]+total_effic[2]]
+            end
+            
+            push!(effic_st1,total_effic[1]/30)
+            push!(effic_st2,total_effic[2]/30)
+            push!(position,[j,n*2-j])
+            push!(time,t)
+        end
+    end
+    # Finding the index of the highest summed efficiancy
+    total_effic = effic_st1 .+ effic_st2
+    a = findmax(total_effic)[2]
+    # Using the index to determine the rebalance amount
+    println("Efficiency for one rebalance:\nstation1 ",effic_st1[a],"\nstation2: ",effic_st2[a],"\nposition: ",position[a],"\nTime: ",time[a])
+    println("Distribution of rebalances:\nStation 1: ",round(position[a][1]/(n*2),digits=3)," Station 2: ",round(position[a][2]/(n*2),digits=3))
+end
+
+### Then a for loop to find the lowest amount of cars for to fullfill the service level ###
+function lowest_cars_with_time(distribution,n_start,t=0.0,stepsize = 2)
+    effic_st1 = 0
+    effic_st2 = 0
+    n = n_start
+
+    while (effic_st1 <= 0.95 || effic_st2[1] <= 0.95)
+        n = n + stepsize
+        _, effic = main([n,n],100,50, ([(floor(Int64,n*2*distribution[1]),trunc(Int64,n*2*distribution[2]))],[float(t)]) )
+        total_effic = [effic[1][1],effic[1][2]]
+        for p in 2:50-1
+            total_effic = [effic[p][1]+total_effic[1],effic[p][2]+total_effic[2]]
+        end
+        effic_st1 = total_effic[1]/50
+        effic_st2 = total_effic[2]/50
+    end
+
+    println("Efficiency for one rebalance:\nstation1 ",effic_st1,"\nstation2: ",effic_st2,"\nthe amount of cars needed for the desired service level: ",n*2)
+end
+
+# ideal_rebalance_with_time(100) # 0.755,0.245,9
+# lowest_cars_with_time([0.755,0.245],100,9) # 244
+
+# ideal_rebalance_with_time(122) # 0.803,0.197,7
+# lowest_cars_with_time([0.803,0.197],105,7) # 234
+# Testing at 8, since stepsize is 2, the lowest amount of cars found is at 8
+# lowest_cars_with_time([0.803,0.197],105,8) # 222 
+
+# ideal_rebalance_with_time(117) # 0.774,0.226,9
+# lowest_cars_with_time([0.774,0.226],105,9) #242
 
 
 ############ for loop for two rebalance at 7 and 13 ############
@@ -461,66 +520,6 @@ end
 # ideal_rebalance_7_13(80,10) # [0.881,0.119],[0.521,0.479]
 # lowest_cars_7_13([[0.881,0.119,],[0.569,0.431]],80,1) # 162
 
-
-
-############ for loop for one rebalance at determined time and distribution ############
-function ideal_rebalance_with_time(n,stepsize_time=2,stepsize_distribution=15)
-    effic_st1 = []
-    effic_st2 = []
-    position = []
-    time = []
-    for t in 1:stepsize_time:24
-        for j in 1:stepsize_distribution:n*2
-            _, effic = main([n,n],50,30, ([(j,n*2-j)],[float(t)]) )
-            total_effic = [effic[1][1],effic[1][2]]
-            for p in 2:30-1
-                total_effic = [effic[p][1]+total_effic[1],effic[p][2]+total_effic[2]]
-            end
-            
-            push!(effic_st1,total_effic[1]/30)
-            push!(effic_st2,total_effic[2]/30)
-            push!(position,[j,n*2-j])
-            push!(time,t)
-        end
-    end
-    # Finding the index of the highest summed efficiancy
-    total_effic = effic_st1 .+ effic_st2
-    a = findmax(total_effic)[2]
-    # Using the index to determine the rebalance amount
-    println("Efficiency for one rebalance:\nstation1 ",effic_st1[a],"\nstation2: ",effic_st2[a],"\nposition: ",position[a],"\nTime: ",time[a])
-    println("Distribution of rebalances:\nStation 1: ",round(position[a][1]/(n*2),digits=3)," Station 2: ",round(position[a][2]/(n*2),digits=3))
-end
-
-### Then a for loop to find the lowest amount of cars for to fullfill the service level ###
-function lowest_cars_with_time(distribution,n_start,t=0.0,stepsize = 2)
-    effic_st1 = 0
-    effic_st2 = 0
-    n = n_start
-
-    while (effic_st1 <= 0.95 || effic_st2[1] <= 0.95)
-        n = n + stepsize
-        _, effic = main([n,n],100,50, ([(floor(Int64,n*2*distribution[1]),trunc(Int64,n*2*distribution[2]))],[float(t)]) )
-        total_effic = [effic[1][1],effic[1][2]]
-        for p in 2:50-1
-            total_effic = [effic[p][1]+total_effic[1],effic[p][2]+total_effic[2]]
-        end
-        effic_st1 = total_effic[1]/50
-        effic_st2 = total_effic[2]/50
-    end
-
-    println("Efficiency for one rebalance:\nstation1 ",effic_st1,"\nstation2: ",effic_st2,"\nthe amount of cars needed for the desired service level: ",n*2)
-end
-
-# ideal_rebalance_with_time(100) # 0.755,0.245,9
-# lowest_cars_with_time([0.755,0.245],100,9) # 244
-
-# ideal_rebalance_with_time(122) # 0.803,0.197,7
-# lowest_cars_with_time([0.803,0.197],105,7) # 234
-# Testing at 8, since stepsize is 2, the lowest amount of cars found is at 8
-# lowest_cars_with_time([0.803,0.197],105,8) # 222 
-
-# ideal_rebalance_with_time(117) # 0.774,0.226,9
-# lowest_cars_with_time([0.774,0.226],105,9) #242
 
 
 ########### Example for plotting and averages with one rebalance based on previous optimization ############
