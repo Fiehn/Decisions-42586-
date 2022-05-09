@@ -42,39 +42,40 @@ P = [0.9 0.1;
 # P = [0.9 0.1;
 #     0.6 0.4]
 
-# # Probability for i to j in n-steps
-# P= [0.632 0.632 0.1 0.2; 
-#     0.632 0.264 0.4 0.2; 
-#     0.264 0.184 0.368 0.368; 
-#     0.08 0.184 0.368 0.368]
+# Probability for i to j in n-steps
+P= [0.632 0.632 0.1 0.2; 
+    0.632 0.264 0.4 0.2; 
+    0.264 0.184 0.368 0.368; 
+    0.08 0.184 0.368 0.368]
 
-# function nStepProp(P,i,j,n)
-#     # Takes transition matrix: P
-#     # i: start state
-#     # j: end state
-#     # n: steps
-#     n=n-1
+function nStepProp(P,i,j,n)
+    # Takes transition matrix: P
+    # i: start state
+    # j: end state
+    # n: steps
+    n=n-1
 
-#     # Creating the vectors for the used probabilities
-#     # Since k cannot equal j 
-#     p = []
-#     f = []
-#     for k in 1:length(P[1,:])
-#         if k != j
-#             append!(p,P[i,k])
-#             append!(f,P[k,j])
-#         end
-#     end
+    # Creating the vectors for the used probabilities
+    # Since k cannot equal j 
+    p = []
+    f = []
+    for k in 1:length(P[1,:])
+        if k != j
+            append!(p,P[i,k])
+            append!(f,P[k,j])
+        end
+    end
 
-#     for l in 1:n
-#         #Running the iterative function
-#         f = p.*f
+    for _ in 1:n
+        #Running the iterative function
+        f = p.*f
 
-#     end
-#     #Final Probability
-#     prop = sum(f)
-# end
-# nStepProp(P,4,1,2)
+    end
+    #Final Probability
+    prop = sum(f)
+    return prop
+end
+nStepProp(P,4,1,2)
 
 
 

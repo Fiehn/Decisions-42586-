@@ -528,8 +528,16 @@ end
 main([floor(Int64,222*0.803),trunc(Int64,222*0.197)],10,1,([(floor(Int64,222*0.803),trunc(Int64,222*0.197))],[8.0]))
 
 plot(out[3],out[1],color="blue",labels="Amount of vehicles at station 1 by hours") # Plot the graph of vehicles for station 1
-plot(out[3],out[2],color="red",labels="Amount of vehicles at station 2 by hours") # Plot the graph of vehicles for station 2
+plot!(out[3],out[2],color="red",labels="Amount of vehicles at station 2 by hours") # Plot the graph of vehicles for station 2
 
 
+### Values (run with different values) ###
+time, eff = main([floor(Int64,210*0.803),trunc(Int64,210*0.197)],100,20,([(floor(Int64,210*0.803),trunc(Int64,210*0.197))],[8.0]))
+
+mean_eff,std_eff,mean_time,std_time = mean_std_main(time, eff)
+ConfSample(mean_eff[1],std_eff[1],length(eff),0.95)
+ConfSample(mean_eff[2],std_eff[2],length(eff),0.95)
+ConfSample(mean_time[1],std_time[1],length(eff),0.95)
+ConfSample(mean_time[2],std_time[2],length(eff),0.95)
 
 
