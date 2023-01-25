@@ -532,9 +532,30 @@ function nStepProp(mc::MarkovChain,i::Int64,j::Int64,n::Int64)
     return sum(f) # er det ikke bare f?? 
 end
 
+# # VIrker ikke, den er bare copilot
+# function PageRank(mc::MarkovChain)
+#     # PageRank algorithm
+#     # Source: https://en.wikipedia.org/wiki/PageRank
+#     # Initialize
+#     l = n_states(mc)
+#     r = ones(l)/l
+#     # Loop
+#     for _ in 1:100
+#         r = r*mc
+#     end
+#     return r
+# end
+
 
 
 # It is time for the hidden markov chains
+
+
+# https://en.wikipedia.org/wiki/Viterbi_algorithm
+function viterby(mc::MarkovChain)
+    
+end
+
 
 
 # # Markov chain properties
@@ -616,4 +637,3 @@ visited = falses(length(V))
 # https://github.com/FAST-ASR/MarkovModels.jl/blob/master/src/fsms/fsmop.jl
 # https://www.probabilitycourse.com/chapter11/11_2_4_classification_of_states.php
 # https://github.com/sbromberger/LightGraphs.jl/blob/master/src/connectivity.jl
-
